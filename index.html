@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle de Ordem de Serviço - SISS</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Cabeçalho fixo -->
+    <header id="cabecalho">
+        <h1>Controle de Ordem de Serviço - SISS</h1>
+    </header>
+
+    <!-- Navegação em abas -->
+    <nav id="navegacao" aria-label="Navegação do sistema">
+        <button type="button" class="aba-btn ativa" data-aba="principal" aria-current="page">Dashboard &amp; Tabela</button>
+        <button type="button" class="aba-btn" data-aba="kanban">Kanban</button>
+        <button type="button" class="aba-btn" data-aba="configuracoes">Configurações</button>
+    </nav>
+
+    <main id="conteudo-principal">
+        <!-- ============================================== -->
+        <!-- 1. TELA PRINCIPAL (DASHBOARD + TABELA)        -->
+        <!-- ============================================== -->
+        <section id="secao-principal" class="secao-ativa" aria-label="Dashboard e Tabela de Ordens de Serviço">
+            <!-- Ações rápidas do topo -->
+            <div class="barra-acoes-topo">
+                <button type="button" id="btn-nova-os-topo" class="btn btn-destaque" aria-label="Cadastrar nova Ordem de Serviço">+ Nova OS</button>
+                <div class="grupo-backup">
+                    <button type="button" id="btn-exportar-backup" class="btn btn-secundario" title="Baixar arquivo JSON com todas as OS e Responsáveis">💾 Exportar Backup</button>
+                    <label class="btn btn-secundario" for="input-importar-backup" title="Importar arquivo JSON de backup" tabindex="0" role="button">📂 Importar Backup</label>
+                    <input type="file" id="input-importar-backup" accept=".json" class="oculto" aria-label="Selecionar arquivo de backup JSON">
+                </div>
+            </div>
+
+            <!-- a) Cards com total de OS e por status -->
+            <div id="cards-resumo" class="cards-grid" aria-label="Resumo por status"></div>
+
+            <!-- b) Gráficos -->
+            <div class="graficos-grid">
+                <div class="grafico-card">
+                    <h3>Quantidade de OS por Status</h3>
+                    <div class="canvas-container">
+                        <canvas id="grafico-status" width="460" height="240" aria-label="Gráfico de barras por status"></canvas>
+                        <p class="grafico-vazio oculto" id="vazio-status">Sem dados para exibir</p>
+                    </div>
+                </div>
+
+                <div class="grafico-card">
+                    <h3>Quantidade de OS por Tipo</h3>
+                    <div class="canvas-container">
+                        <canvas id="grafico-tipo" width="460" height="240" aria-label="Gráfico de barras por tipo"></canvas>
+                        <p class="grafico-vazio oculto" id="vazio-tipo">Sem dados para exibir</p>
+                    </div>
+                </div>
+
+                <div class="grafico-card">
+                    <h3>OS Abertas por Versão e Ambiente</h3>
+                    <div class="canvas-container">
+                        <canvas id="grafico-versao" width="460" height="240" aria-label="Gráfico de barras agrupadas por versão e ambiente"></canvas>
+                        <p class="grafico-vazio oculto" id="vazio-versao">Sem dados para exibir</p>
+                    </div>
+                </div>
+
+                <div class="grafico-card">
+                    <h3>OS Abertas por Módulo</h3>
+                    <div class="canvas-container">
+                        <canvas id="grafico-modulo" width="460" height="240" aria-label="Gráfico de barras de OS abertas por módulo"></canvas>
+                        <p class="grafico-vazio oculto" id="vazio-modulo">Sem dados para exibir</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- c e d) Barra de botões acima da tabela -->
+            <div class="tabela-barra-topo">
+                <div class="tabela-titulo-grupo">
+                    <h2>Ordens de Serviço</h2>
+                    <span id="contador-tabela" class="contador-badge">0 OS</span>
+                </div>
+                <div class="tabela-botoes-acoes">
+                    <button type="button" id="btn-nova-os-meio" class="btn btn-destaque">+ Nova OS</button>
+                    <button type="button" id="btn-gerar-pdf" class="btn btn-secundario" title="Gerar relatório em PDF com filtros aplicados">📄 Gerar PDF</button>
+                    <button type="button" id="btn-exportar-excel" class="btn btn-secundario" title="Exportar planilha Excel com filtros aplicados">📊 Exportar Excel</button>
+                </div>
+            </div>
+
+            <!-- f) Filtros da tabela -->
+            <div class="painel-filtros" aria-label="Filtros da tabela">
+                <div class="filtro-campo">
+                    <label for="filtro-tab-status">Status</label>
+                    <select id="filtro-tab-status">
+                        <option value="">Todos</option>
+                        <option value="Aberta">Aberta</option>
+                        <option value="Pendente">Pendente</option>
+                        <option value="Andamento">Andamento</option>
+                        <option value="Teste">Teste</option>
+                        <option value="Concluída">Concluída</option>
+                    </select>
+                </div>
+                <div class="filtro-campo">
+                    <label for="filtro-tab-tipo">Tipo</label>
+                    <select id="filtro-tab-tipo">
+                        <option value="">Todos</option>
+                        <option value="Crítica">Crítica</option>
+                        <option value="Prioridade Alta">Prioridade Alta</option>
+                        <option value="Prioridade Média">Prioridade Média</option>
+                        <option value="Melhoria">Melhoria</option>
+                    </select>
+                </div>
+                <div class="filtro-campo">
+                    <label for="filtro-tab-versao">Versão</label>
+                    <select id="filtro-tab-versao">
+                        <option value="">Todas</option>
+                        <option value="V2 SISS Hospitalar">V2 SISS Hospitalar</option>
+                        <option value="V5 SISS Hospitalar">V5 SISS Hospitalar</option>
+                        <option value="__SEM_VALOR__">Não informado</option>
+                    </select>
+                </div>
+                <div class="filtro-campo">
+                    <label for="filtro-tab-ambiente">Ambiente</label>
+                    <select id="filtro-tab-ambiente">
+                        <option value="">Todos</option>
+                        <option value="Homolog">Homolog</option>
+                        <option value="Produção">Produção</option>
+                        <option value="__SEM_VALOR__">Não informado</option>
+                    </select>
+                </div>
+                <div class="filtro-campo">
+                    <label for="filtro-tab-modulo">Módulo</label>
+                    <select id="filtro-tab-modulo">
+                        <option value="">Todos</option>
+                    </select>
+                </div>
+                <div class="filtro-campo">
+                    <label for="filtro-tab-responsavel">Responsável</label>
+                    <select id="filtro-tab-responsavel">
+                        <option value="">Todos</option>
+                    </select>
+                </div>
+                <div class="filtro-campo filtro-campo-busca">
+                    <label for="filtro-tab-busca">Busca rápida</label>
+                    <input type="search" id="filtro-tab-busca" placeholder="Descrição ou Nº Azure DevOps...">
+                </div>
+                <div class="filtro-campo filtro-campo-limpar">
+                    <button type="button" id="btn-limpar-filtros-tab" class="btn btn-cancelar" title="Limpar todos os filtros">Limpar</button>
+                </div>
+            </div>
+
+            <!-- e) Tabela com todas as OS -->
+            <div class="tabela-container" tabindex="0" aria-label="Tabela de Ordens de Serviço">
+                <table id="tabela-os" class="tabela-dados">
+                    <thead>
+                        <tr>
+                            <th scope="col">Nº Azure DevOps</th>
+                            <th scope="col">Descrição</th>
+                            <th scope="col">Tipo</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Módulo</th>
+                            <th scope="col">Versão</th>
+                            <th scope="col">Ambiente</th>
+                            <th scope="col">Responsável</th>
+                            <th scope="col">Data/Hora Abertura</th>
+                            <th scope="col" class="th-acao">Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabela-os-corpo">
+                        <!-- Linhas geradas via JavaScript -->
+                    </tbody>
+                </table>
+                <div id="tabela-vazia" class="mensagem-vazia oculto">Nenhuma Ordem de Serviço encontrada para os filtros aplicados.</div>
+            </div>
+        </section>
+
+        <!-- ============================================== -->
+        <!-- 3. KANBAN (Aberta, Pendente, Andamento, Teste) -->
+        <!-- ============================================== -->
+        <section id="secao-kanban" class="oculto" aria-label="Quadro Kanban de Ordens de Serviço">
+            <div class="kanban-barra-topo">
+                <div class="kanban-titulo-grupo">
+                    <h2>Quadro Kanban</h2>
+                    <span class="kanban-aviso-concluida">Exibe OS em Aberta, Pendente, Andamento e Teste</span>
+                </div>
+                <button type="button" id="btn-nova-os-kanban" class="btn btn-destaque">+ Nova OS</button>
+            </div>
+
+            <!-- Filtros do Kanban -->
+            <div class="painel-filtros" aria-label="Filtros do Kanban">
+                <div class="filtro-campo">
+                    <label for="filtro-kan-tipo">Tipo</label>
+                    <select id="filtro-kan-tipo">
+                        <option value="">Todos</option>
+                        <option value="Crítica">Crítica</option>
+                        <option value="Prioridade Alta">Prioridade Alta</option>
+                        <option value="Prioridade Média">Prioridade Média</option>
+                        <option value="Melhoria">Melhoria</option>
+                    </select>
+                </div>
+                <div class="filtro-campo">
+                    <label for="filtro-kan-versao">Versão</label>
+                    <select id="filtro-kan-versao">
+                        <option value="">Todas</option>
+                        <option value="V2 SISS Hospitalar">V2 SISS Hospitalar</option>
+                        <option value="V5 SISS Hospitalar">V5 SISS Hospitalar</option>
+                        <option value="__SEM_VALOR__">Não informado</option>
+                    </select>
+                </div>
+                <div class="filtro-campo">
+                    <label for="filtro-kan-ambiente">Ambiente</label>
+                    <select id="filtro-kan-ambiente">
+                        <option value="">Todos</option>
+                        <option value="Homolog">Homolog</option>
+                        <option value="Produção">Produção</option>
+                        <option value="__SEM_VALOR__">Não informado</option>
+                    </select>
+                </div>
+                <div class="filtro-campo">
+                    <label for="filtro-kan-modulo">Módulo</label>
+                    <select id="filtro-kan-modulo">
+                        <option value="">Todos</option>
+                    </select>
+                </div>
+                <div class="filtro-campo">
+                    <label for="filtro-kan-responsavel">Responsável</label>
+                    <select id="filtro-kan-responsavel">
+                        <option value="">Todos</option>
+                    </select>
+                </div>
+                <div class="filtro-campo filtro-campo-busca">
+                    <label for="filtro-kan-busca">Busca rápida</label>
+                    <input type="search" id="filtro-kan-busca" placeholder="Descrição ou Nº Azure DevOps...">
+                </div>
+                <div class="filtro-campo filtro-campo-limpar">
+                    <button type="button" id="btn-limpar-filtros-kan" class="btn btn-cancelar" title="Limpar todos os filtros">Limpar</button>
+                </div>
+            </div>
+
+            <!-- Quadro Kanban com as 4 colunas -->
+            <div id="kanban-tabuleiro" class="kanban-grid" aria-label="Colunas do Kanban">
+                <!-- Coluna Aberta -->
+                <div class="kanban-coluna" data-status="Aberta">
+                    <div class="kanban-coluna-header header-aberta">
+                        <span>Aberta</span>
+                        <span class="kanban-contagem" id="cont-kanban-Aberta">(0)</span>
+                    </div>
+                    <div class="kanban-cartoes-lista" data-status="Aberta"></div>
+                </div>
+
+                <!-- Coluna Pendente -->
+                <div class="kanban-coluna" data-status="Pendente">
+                    <div class="kanban-coluna-header header-pendente">
+                        <span>Pendente</span>
+                        <span class="kanban-contagem" id="cont-kanban-Pendente">(0)</span>
+                    </div>
+                    <div class="kanban-cartoes-lista" data-status="Pendente"></div>
+                </div>
+
+                <!-- Coluna Andamento -->
+                <div class="kanban-coluna" data-status="Andamento">
+                    <div class="kanban-coluna-header header-andamento">
+                        <span>Andamento</span>
+                        <span class="kanban-contagem" id="cont-kanban-Andamento">(0)</span>
+                    </div>
+                    <div class="kanban-cartoes-lista" data-status="Andamento"></div>
+                </div>
+
+                <!-- Coluna Teste -->
+                <div class="kanban-coluna" data-status="Teste">
+                    <div class="kanban-coluna-header header-teste">
+                        <span>Teste</span>
+                        <span class="kanban-contagem" id="cont-kanban-Teste">(0)</span>
+                    </div>
+                    <div class="kanban-cartoes-lista" data-status="Teste"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================== -->
+        <!-- 7. CONFIGURAÇÕES (RESPONSÁVEIS)                -->
+        <!-- ============================================== -->
+        <section id="secao-configuracoes" class="oculto" aria-label="Configurações do sistema">
+            <div class="config-cabecalho">
+                <h2>Configurações do Sistema</h2>
+                <p>Gerencie a lista de responsáveis pelas ordens de serviço.</p>
+            </div>
+
+            <div class="config-card">
+                <h3>Cadastro de Responsáveis</h3>
+                <form id="form-responsavel" class="form-inline" novalidate>
+                    <input type="hidden" id="responsavel-indice-edicao" value="">
+                    <div class="campo campo-flex">
+                        <label for="campo-nome-responsavel">Nome do Responsável <span class="obrigatorio">*</span></label>
+                        <input type="text" id="campo-nome-responsavel" placeholder="Ex: Maria Santos" autocomplete="off">
+                        <span class="erro-campo" id="erro-nome-responsavel" role="alert"></span>
+                    </div>
+                    <div class="acoes-inline">
+                        <button type="submit" id="btn-salvar-responsavel" class="btn btn-destaque">Adicionar</button>
+                        <button type="button" id="btn-cancelar-edicao-resp" class="btn btn-cancelar oculto">Cancelar</button>
+                    </div>
+                </form>
+
+                <h4 class="subtitulo-lista">Responsáveis Atuais</h4>
+                <div id="lista-responsaveis-container" class="lista-responsaveis">
+                    <!-- Gerado via JavaScript -->
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ============================================== -->
+    <!-- 2. MODAL DE CADASTRO / EDIÇÃO DE OS            -->
+    <!-- ============================================== -->
+    <div id="modal-os" class="modal oculto" role="dialog" aria-modal="true" aria-labelledby="modal-os-titulo">
+        <div class="modal-overlay" data-fechar="modal-os"></div>
+        <div class="modal-conteudo">
+            <button type="button" class="modal-fechar" data-fechar="modal-os" aria-label="Fechar janela">&times;</button>
+            <h2 id="modal-os-titulo">Nova Ordem de Serviço</h2>
+
+            <!-- Aviso caso não existam responsáveis cadastrados -->
+            <div id="alerta-sem-responsaveis" class="alerta-aviso oculto" role="alert">
+                ⚠️ Cadastre os responsáveis em <a href="#" id="link-ir-configuracoes">Configurações</a> antes de criar uma OS.
+            </div>
+
+            <form id="form-os" novalidate>
+                <input type="hidden" id="form-os-id">
+
+                <!-- Descrição -->
+                <div class="campo">
+                    <label for="campo-descricao">Descrição da OS <span class="obrigatorio">*</span></label>
+                    <textarea id="campo-descricao" rows="3" placeholder="Descreva os detalhes da ordem de serviço..."></textarea>
+                    <span class="erro-campo" id="erro-descricao" role="alert"></span>
+                </div>
+
+                <!-- Grid com 2 colunas para campos complementares -->
+                <div class="form-grid-2">
+                    <!-- Tipo -->
+                    <div class="campo">
+                        <label for="campo-tipo">Tipo <span class="obrigatorio">*</span></label>
+                        <select id="campo-tipo">
+                            <option value="">Selecione o tipo...</option>
+                            <option value="Crítica">Crítica</option>
+                            <option value="Prioridade Alta">Prioridade Alta</option>
+                            <option value="Prioridade Média">Prioridade Média</option>
+                            <option value="Melhoria">Melhoria</option>
+                        </select>
+                        <span class="erro-campo" id="erro-tipo" role="alert"></span>
+                    </div>
+
+                    <!-- Status -->
+                    <div class="campo">
+                        <label for="campo-status">Status <span class="obrigatorio">*</span></label>
+                        <select id="campo-status">
+                            <option value="Aberta">Aberta</option>
+                            <option value="Pendente">Pendente</option>
+                            <option value="Andamento">Andamento</option>
+                            <option value="Teste">Teste</option>
+                            <option value="Concluída">Concluída</option>
+                        </select>
+                        <span class="erro-campo" id="erro-status" role="alert"></span>
+                    </div>
+                </div>
+
+                <div class="form-grid-2">
+                    <!-- Nº Azure DevOps -->
+                    <div class="campo">
+                        <label for="campo-azure">Nº Azure DevOps</label>
+                        <input type="text" id="campo-azure" placeholder="Ex: 104523 (opcional)">
+                        <span class="erro-campo" id="erro-azure" role="alert"></span>
+                    </div>
+
+                    <!-- Módulo (com datalist de sugestões) -->
+                    <div class="campo">
+                        <label for="campo-modulo">Módulo <span class="obrigatorio">*</span></label>
+                        <input type="text" id="campo-modulo" list="sugestoes-modulos" placeholder="Ex: Farmácia, Recepção..." autocomplete="off">
+                        <datalist id="sugestoes-modulos"></datalist>
+                        <span class="erro-campo" id="erro-modulo" role="alert"></span>
+                    </div>
+                </div>
+
+                <div class="form-grid-2">
+                    <!-- Versão -->
+                    <div class="campo">
+                        <label for="campo-versao">Versão <span class="obrigatorio">*</span></label>
+                        <select id="campo-versao">
+                            <option value="">Selecione a versão...</option>
+                            <option value="V2 SISS Hospitalar">V2 SISS Hospitalar</option>
+                            <option value="V5 SISS Hospitalar">V5 SISS Hospitalar</option>
+                        </select>
+                        <span class="erro-campo" id="erro-versao" role="alert"></span>
+                    </div>
+
+                    <!-- Ambiente -->
+                    <div class="campo">
+                        <label for="campo-ambiente">Ambiente <span class="obrigatorio">*</span></label>
+                        <select id="campo-ambiente">
+                            <option value="">Selecione o ambiente...</option>
+                            <option value="Homolog">Homolog</option>
+                            <option value="Produção">Produção</option>
+                        </select>
+                        <span class="erro-campo" id="erro-ambiente" role="alert"></span>
+                    </div>
+                </div>
+
+                <!-- Responsável -->
+                <div class="campo">
+                    <label for="campo-responsavel">Responsável <span class="obrigatorio">*</span></label>
+                    <select id="campo-responsavel">
+                        <option value="">Selecione o responsável...</option>
+                    </select>
+                    <span class="erro-campo" id="erro-responsavel" role="alert"></span>
+                </div>
+
+                <!-- Data e hora de abertura -->
+                <div class="campo">
+                    <label for="campo-data-abertura">Data e Hora de Abertura <span class="obrigatorio">*</span></label>
+                    <input type="datetime-local" id="campo-data-abertura">
+                    <span id="aviso-data-retroativa" class="aviso-retroativa oculto" role="status">ℹ️ OS retroativa</span>
+                    <span class="erro-campo" id="erro-data-abertura" role="alert"></span>
+                </div>
+
+                <div class="modal-botoes">
+                    <button type="submit" class="btn btn-destaque">Salvar</button>
+                    <button type="button" class="btn btn-cancelar" data-fechar="modal-os">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- 4. MODAL DE DETALHES DA OS                     -->
+    <!-- ============================================== -->
+    <div id="modal-detalhes" class="modal oculto" role="dialog" aria-modal="true" aria-labelledby="modal-detalhes-titulo">
+        <div class="modal-overlay" data-fechar="modal-detalhes"></div>
+        <div class="modal-conteudo modal-detalhes-conteudo">
+            <button type="button" class="modal-fechar" data-fechar="modal-detalhes" aria-label="Fechar janela">&times;</button>
+            <div class="detalhes-cabecalho">
+                <h2 id="modal-detalhes-titulo">Detalhes da Ordem de Serviço</h2>
+                <div id="detalhes-badge-status"></div>
+            </div>
+
+            <!-- Corpo de exibição dos detalhes -->
+            <div id="detalhes-corpo" class="detalhes-corpo">
+                <!-- Preenchido via JavaScript -->
+            </div>
+
+            <!-- 5. Tabela de histórico de status -->
+            <div class="detalhes-historico-secao">
+                <h3>Histórico de Status</h3>
+                <div class="tabela-container">
+                    <table class="tabela-dados tabela-historico">
+                        <thead>
+                            <tr>
+                                <th scope="col">Etapa</th>
+                                <th scope="col">Data/Hora Entrada</th>
+                                <th scope="col">Tempo na Etapa</th>
+                            </tr>
+                        </thead>
+                        <tbody id="detalhes-historico-corpo">
+                            <!-- Preenchido via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Ações da OS -->
+            <div class="modal-botoes modal-botoes-detalhes">
+                <button type="button" id="btn-detalhes-editar" class="btn btn-destaque">✏️ Editar</button>
+                <button type="button" id="btn-detalhes-link-publico" class="btn btn-secundario">🔗 Copiar Link Público</button>
+                <button type="button" id="btn-detalhes-excluir" class="btn btn-perigo">🗑️ Excluir</button>
+                <button type="button" class="btn btn-cancelar" data-fechar="modal-detalhes">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- MODAL DE MOVER STATUS (MOBILE / KANBAN)        -->
+    <!-- ============================================== -->
+    <div id="modal-mover" class="modal oculto" role="dialog" aria-modal="true" aria-labelledby="modal-mover-titulo">
+        <div class="modal-overlay" data-fechar="modal-mover"></div>
+        <div class="modal-conteudo modal-pequeno">
+            <button type="button" class="modal-fechar" data-fechar="modal-mover" aria-label="Fechar janela">&times;</button>
+            <h2 id="modal-mover-titulo">Mover Ordem de Serviço</h2>
+            <p id="mover-os-descricao" class="mover-descricao-texto"></p>
+            <p class="instrucao-mover">Escolha o novo status para esta OS:</p>
+            <div id="mover-opcoes-status" class="mover-botoes-grid">
+                <!-- Botões de status gerados via JavaScript -->
+            </div>
+            <div class="modal-botoes">
+                <button type="button" class="btn btn-cancelar" data-fechar="modal-mover">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- MODAL GENÉRICO DE CONFIRMAÇÃO                  -->
+    <!-- ============================================== -->
+    <div id="modal-confirmacao" class="modal oculto" role="dialog" aria-modal="true" aria-labelledby="confirma-titulo">
+        <div class="modal-overlay" data-fechar="modal-confirmacao"></div>
+        <div class="modal-conteudo modal-pequeno">
+            <button type="button" class="modal-fechar" data-fechar="modal-confirmacao" aria-label="Fechar janela">&times;</button>
+            <h2 id="confirma-titulo">Confirmação</h2>
+            <p id="confirma-mensagem" class="confirma-mensagem-texto"></p>
+            <div id="confirma-botoes-container" class="modal-botoes">
+                <!-- Botões gerados dinamicamente via JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast flutuante para mensagens de sucesso/erro/aviso -->
+    <div id="toast" class="toast oculto" role="status" aria-live="polite"></div>
+
+    <!-- CDNs jsPDF (com autoTable) e SheetJS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+
+    <!-- Script principal -->
+    <script src="app.js"></script>
+</body>
+</html>

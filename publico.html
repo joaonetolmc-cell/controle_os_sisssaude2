@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualização da OS - Controle de Ordem de Serviço - SISS</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Estilos específicos da página pública */
+        .publico-corpo {
+            max-width: 800px;
+            margin: 124px auto 40px;
+            padding: 0 16px;
+        }
+
+        .publico-cartao {
+            background-color: var(--cor-card);
+            border-radius: var(--raio-borda);
+            padding: 24px;
+            box-shadow: var(--sombra-card);
+        }
+
+        .publico-aviso-momento {
+            background-color: var(--cor-aviso-suave);
+            border: 1px solid var(--cor-aviso);
+            color: #7a4f00;
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-size: 0.88rem;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .publico-erro-container {
+            text-align: center;
+            padding: 40px 16px;
+        }
+
+        .publico-erro-titulo {
+            color: var(--cor-perigo);
+            font-size: 1.3rem;
+            margin-bottom: 8px;
+        }
+
+        .publico-erro-subtitulo {
+            color: var(--cor-texto-secundario);
+            font-size: 0.95rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Cabeçalho fixo idêntico ao principal -->
+    <header id="cabecalho">
+        <h1>Controle de Ordem de Serviço - SISS</h1>
+    </header>
+
+    <main class="publico-corpo">
+        <div id="container-publico" class="publico-cartao">
+            <div id="publico-carregando" style="text-align:center; padding:30px; color:#5f6368;">
+                Carregando dados da ordem de serviço...
+            </div>
+        </div>
+    </main>
+
+    <!-- Script exclusivo da página pública -->
+    <script src="publico.js"></script>
+</body>
+</html>
